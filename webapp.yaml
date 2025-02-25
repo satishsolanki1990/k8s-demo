@@ -1,0 +1,56 @@
+# this is deployment file
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webapp-deployment
+  labels:
+    app: webapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: webapp
+  # template = configuration for pod
+  template:
+    metadata:
+      labels:
+        app: webapp # required for pod
+    spec:
+      containers:
+      - name: webapp
+        image: nanajanashia/k8s-demo-app:v1.0
+        ports:
+        - containerPort: 3000
+        env: # webapp needs username and password
+        - name: USER_NAME
+          valueFrom:
+            secretKeyRef:
+              name: mongo-sercret
+              key: mongo-user
+        - name: USR_PWD
+          valueFrom:
+            secretKeyRef:
+              name: mongo-sercret
+              key: mongo-password
+        - name: DB_URL
+          valueFrom:
+            configMapKeyRef:
+              name: mongo-config
+              key: mongo-url
+# add service below
+---
+apiVersion: v1
+kind: Service
+metadata:
+  # match in config
+  name: webapp-service
+spec:
+  type: NodePort # this will expose the ervice on each node's IP at a static port (default value is ClusterIP, which is internal)
+  selector:
+    # this name will find following pod
+    app: webapp
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 3000
+      nodePort: 30008 # must be in range 30000 - 32676

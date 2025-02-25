@@ -1,0 +1,50 @@
+# this is deployment file
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongo-deployment
+  labels:
+    app: mongo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongo
+  # template = configuration for pod
+  template:
+    metadata:
+      labels:
+        app: mongo # required for pod
+    spec:
+      containers:
+      - name: mongodb
+        image: mongo:7.0
+        ports:
+        - containerPort: 27017 # default port from mondo doc
+        env: # DB needs username and password
+        - name: MONGO_INITDB_ROOT_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: mongo-sercret
+              key: mongo-user
+        - name: MONGO_INITDB_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mongo-sercret
+              key: mongo-password
+
+# add service below
+---
+apiVersion: v1
+kind: Service
+metadata:
+  # match in config
+  name: mongo-service
+spec:
+  selector:
+    # this name will find following pod
+    app: mongo
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 27017
